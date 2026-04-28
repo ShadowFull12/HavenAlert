@@ -1,0 +1,166 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  html {
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-haven-light text-haven-dark font-sans;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  input, select, textarea {
+    @apply text-base;
+  }
+}
+
+@layer components {
+  .label-caption {
+    @apply text-caption uppercase text-haven-muted font-medium;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm;
+  }
+
+  .card-dark {
+    @apply bg-haven-surface rounded-xl border border-haven-border;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 
+           bg-haven-dark text-white rounded-lg font-medium text-sm
+           transition-all duration-150 
+           hover:bg-slate-800 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 
+           bg-danger text-white rounded-lg font-medium text-sm
+           transition-all duration-150 
+           hover:bg-red-600 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 
+           bg-white text-haven-dark rounded-lg font-medium text-sm
+           border border-gray-200 transition-all duration-150
+           hover:bg-gray-50 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2
+           text-haven-muted rounded-lg font-medium text-sm
+           transition-all duration-150
+           hover:bg-gray-100 hover:text-haven-dark;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-lg border border-gray-200 
+           text-haven-dark bg-white placeholder:text-haven-muted
+           focus:outline-none focus:ring-2 focus:ring-haven-dark/20 focus:border-haven-dark
+           transition-all duration-150;
+  }
+
+  .input-error {
+    @apply border-danger focus:ring-danger/20 focus:border-danger;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-critical {
+    @apply bg-danger-light text-danger-dark;
+  }
+
+  .badge-high {
+    @apply bg-warning-light text-warning-dark;
+  }
+
+  .badge-medium {
+    @apply bg-info-light text-info-dark;
+  }
+
+  .badge-low {
+    @apply bg-gray-100 text-gray-600;
+  }
+
+  .badge-success {
+    @apply bg-success-light text-success-dark;
+  }
+
+  /* Sidebar styles for venue dashboard */
+  .sidebar {
+    @apply hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 
+           bg-haven-dark text-white z-30;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 text-sm font-medium 
+           text-slate-300 rounded-lg mx-2
+           transition-colors duration-150
+           hover:bg-haven-surface hover:text-white;
+  }
+
+  .sidebar-link.active {
+    @apply bg-haven-surface text-white;
+  }
+
+  /* Bottom nav for mobile */
+  .bottom-nav {
+    @apply fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 
+           flex items-center justify-around px-2 py-1 z-40
+           md:hidden;
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center gap-0.5 py-2 px-3 text-xs 
+           font-medium text-haven-muted transition-colors duration-150
+           min-w-[44px] min-h-[44px] justify-center;
+  }
+
+  .bottom-nav-item.active {
+    @apply text-haven-dark;
+  }
+
+  /* Mobile bottom sheet modal */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-center;
+  }
+
+  .modal-content {
+    @apply bg-white w-full max-h-[85vh] overflow-y-auto
+           rounded-t-2xl md:rounded-2xl md:max-w-lg md:mx-4
+           animate-fade-in;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply bg-gray-200 rounded animate-pulse;
+  }
+
+  /* Connection lost banner */
+  .connection-banner {
+    @apply fixed top-0 inset-x-0 bg-danger text-white text-center 
+           py-2 text-sm font-medium z-[100];
+  }
+}
