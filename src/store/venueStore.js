@@ -158,7 +158,7 @@ const useVenueStore = create((set, get) => ({
       if (error) throw error;
 
       // Create owner as staff member with full permissions
-      const { data: sm } = await supabase
+      const { data: sm, error: smError } = await supabase
         .from('staff_members')
         .insert({
           venue_id: venue.id,
@@ -172,6 +172,8 @@ const useVenueStore = create((set, get) => ({
         })
         .select()
         .single();
+
+      if (smError) console.error('Staff member insert error (will retry via RPC):', smError);
 
       // Update profile
       await supabase

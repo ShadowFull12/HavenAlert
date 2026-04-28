@@ -115,10 +115,13 @@ export default function StaffManager() {
       supabase.from('staff_members')
         .select('*, profile:profiles(id, full_name, role), group:staff_groups(id, name, color, permissions)')
         .eq('venue_id', venue.id)
-        .order('created_at', { ascending: false }),
+        .order('joined_at', { ascending: false }),
       supabase.from('staff_groups').select('*').eq('venue_id', venue.id),
       supabase.from('staff_invites').select('*').eq('venue_id', venue.id).order('created_at', { ascending: false }),
     ]);
+    if (s.error) console.error('staff_members fetch error:', s.error);
+    if (g.error) console.error('staff_groups fetch error:', g.error);
+    if (i.error) console.error('staff_invites fetch error:', i.error);
     setStaffList(s.data || []);
     setGroups(g.data || []);
     setInvites(i.data || []);

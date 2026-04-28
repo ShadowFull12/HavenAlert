@@ -49,11 +49,14 @@ export default function VenueLayout() {
       const { error } = await supabase.from('staff_members').delete().eq('profile_id', profile.id).eq('venue_id', venue.id);
       if (error) throw error;
       
-      toast.success('You have left the venue.');
+      // Clear venue store completely
+      useVenueStore.getState().reset();
       
-      // Update local profile state and redirect
-      await useAuthStore.getState().refreshProfile();
-      navigate('/auth/staff-login', { replace: true });
+      // Sign the user out fully so they start fresh
+      await signOut();
+      
+      // Hard redirect to home — React state is stale after sign-out
+      window.location.href = '/';
     } catch (err) {
       console.error(err);
       toast.error('Failed to leave venue');

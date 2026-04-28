@@ -233,6 +233,31 @@ alter publication supabase_realtime add table broadcasts;
 alter publication supabase_realtime add table rooms;
 alter publication supabase_realtime add table staff_members;
 
+-- TRIGGERS
+
+-- Auto-create owner staff record when venue is created
+CREATE OR REPLACE FUNCTION on_venue_created() RETURNS trigger AS $$
+BEGIN
+  INSERT INTO staff_members (venue_id, profile_id, role, custom_permissions, is_active)
+  VALUES (
+    NEW.id, NEW.owner_id, 'owner',
+    ARRAY['view_incidents','manage_incidents','view_guests','manage_guests','view_rooms','manage_rooms','view_complaints','manage_complaints','view_staff','manage_staff','view_analytics','manage_venue']::staff_permission[],
+    true
+  ) ON CONFLICT DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+CREATE TRIGGER venue_created_trigger AFTER INSERT ON venues FOR EACH ROW EXECUTE FUNCTION on_venue_created();
+
+-- Reset user profile when staff record is deleted (leave / removal)
+CREATE OR REPLACE FUNCTION on_staff_member_deleted() RETURNS trigger AS $$
+BEGIN
+  UPDATE profiles SET venue_id = NULL, role = 'guest' WHERE id = OLD.profile_id AND venue_id = OLD.venue_id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+CREATE TRIGGER staff_member_deleted_trigger AFTER DELETE ON staff_members FOR EACH ROW EXECUTE FUNCTION on_staff_member_deleted();
+
 -- ROW LEVEL SECURITY
 alter table venues enable row level security;
 alter table profiles enable row level security;
