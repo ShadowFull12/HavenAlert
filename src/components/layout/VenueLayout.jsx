@@ -40,22 +40,25 @@ export default function VenueLayout() {
   }, [profile?.id]);
 
   const isStaff = profile?.role === 'staff';
+  const isOwner = profile?.role === 'owner' || (staffMember?.role === 'owner');
 
   const handleLeaveVenue = async () => {
     if (!confirm('Are you sure you want to leave this venue? You will lose all access and must be re-invited to join again.')) return;
     
     try {
       setInitializing(true);
-      const { error } = await supabase.from('staff_members').delete().eq('profile_id', profile.id).eq('venue_id', venue.id);
-      if (error) throw error;
       
-      // Clear venue store completely
+      // Step 1: Clear venue link from profile FIRST — this is what prevents re-login from finding the venue
+      await supabase.from('profiles').update({ venue_id: null, role: 'guest' }).eq('id', profile.id);
+      
+      // Step 2: Delete staff_members row (may be silently blocked for owners by RLS — that's fine)
+      await supabase.from('staff_members').delete().eq('profile_id', profile.id).eq('venue_id', venue.id);
+      
+      // Step 3: Clear local state and sign out
       useVenueStore.getState().reset();
-      
-      // Sign the user out fully so they start fresh
       await signOut();
       
-      // Hard redirect to home — React state is stale after sign-out
+      // Step 4: Hard redirect — forces full React remount
       window.location.href = '/';
     } catch (err) {
       console.error(err);
@@ -159,7 +162,7 @@ export default function VenueLayout() {
             <LogOut className="w-5 h-5" /> Sign Out
           </button>
           
-          {profile?.role !== 'owner' && (
+          {!isOwner && (
             <button
               onClick={handleLeaveVenue}
               className="sidebar-link w-full text-slate-400 hover:text-white hover:bg-haven-border/50 text-xs py-2"
@@ -242,7 +245,7 @@ export default function VenueLayout() {
               <button onClick={() => { setSidebarOpen(false); handleSignOut(); }} className="sidebar-link w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 mb-2">
                 <LogOut className="w-5 h-5" /> Sign Out
               </button>
-              {profile?.role !== 'owner' && (
+              {!isOwner && (
                 <button
                   onClick={() => { setSidebarOpen(false); handleLeaveVenue(); }}
                   className="sidebar-link w-full text-slate-400 hover:text-white hover:bg-haven-border/50 text-xs py-2"

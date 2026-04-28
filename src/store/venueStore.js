@@ -123,22 +123,27 @@ const useVenueStore = create((set, get) => ({
     }
   },
 
-  // Unified loader — tries all strategies in order
+  // Unified loader — tries strategies based on the user's current profile role
   loadVenueForUser: async (profile) => {
     if (!profile) return null;
     const { role, id: userId, venue_id } = profile;
 
-    // Strategy 1: Try by owner_id (works for owner role, and for managers who created the venue)
-    if (role === 'owner' || role === 'manager') {
+    // If the user's profile role is 'guest' with no venue_id, they have no venue
+    if (role === 'guest' && !venue_id) return null;
+
+    // Strategy 1: Owner — check venues.owner_id
+    if (role === 'owner') {
       const v = await get().loadOwnerVenue(userId);
       if (v) return v;
     }
 
-    // Strategy 2: Try staff_members join (works for staff + managers linked via staff_members table)
-    const sm = await get().loadStaffVenue(userId);
-    if (sm) return get().venue;
+    // Strategy 2: Staff/Manager — check staff_members join
+    if (role === 'staff' || role === 'manager') {
+      const sm = await get().loadStaffVenue(userId);
+      if (sm) return get().venue;
+    }
 
-    // Strategy 3: Fallback — load venue directly from profile.venue_id
+    // Strategy 3: Fallback — load venue from profile.venue_id
     if (venue_id) {
       const v = await get().loadVenue(venue_id);
       if (v) return v;
