@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useVenueStore from '../../store/venueStore';
 import useAuthStore from '../../store/authStore';
+import { usePermissions } from '../../hooks/usePermissions';
 import { supabase } from '../../lib/supabase';
 import VenueCodeCard from '../../components/venue/VenueCodeCard';
 import Input from '../../components/ui/Input';
@@ -10,6 +11,8 @@ import toast from 'react-hot-toast';
 export default function VenueSettings() {
   const { venue } = useVenueStore();
   const { user } = useAuthStore();
+  const { can } = usePermissions();
+  const canManageVenue = can('manage_venue');
   const [form, setForm] = useState({
     name: venue?.name || '',
     address: venue?.address || '',
@@ -48,19 +51,21 @@ export default function VenueSettings() {
 
       <VenueCodeCard venueCode={venue?.venue_code || '--------'} />
 
-      <Button variant="secondary" onClick={regenerateCode} className="text-sm">Regenerate Venue Code</Button>
+      {canManageVenue && (
+        <Button variant="secondary" onClick={regenerateCode} className="text-sm">Regenerate Venue Code</Button>
+      )}
 
       <form onSubmit={handleSave} className="card p-5 space-y-4">
         <h3 className="font-semibold text-haven-dark text-sm">Venue Profile</h3>
-        <Input label="Venue Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <Input label="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+        <Input label="Venue Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} disabled={!canManageVenue} />
+        <Input label="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} disabled={!canManageVenue} />
         <div className="grid grid-cols-2 gap-3">
-          <Input label="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-          <Input label="Country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+          <Input label="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} disabled={!canManageVenue} />
+          <Input label="Country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} disabled={!canManageVenue} />
         </div>
-        <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-        <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <Button type="submit" loading={saving} className="w-full">Save Changes</Button>
+        <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} disabled={!canManageVenue} />
+        <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={!canManageVenue} />
+        {canManageVenue && <Button type="submit" loading={saving} className="w-full">Save Changes</Button>}
       </form>
     </div>
   );

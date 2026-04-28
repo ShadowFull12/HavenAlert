@@ -5,14 +5,13 @@ import { supabase } from '../../lib/supabase';
 import useAuthStore from '../../store/authStore';
 import useVenueStore from '../../store/venueStore';
 import { useRealtimeMessages } from '../../hooks/useRealtimeMessages';
+import { usePermissions } from '../../hooks/usePermissions';
 import { logAudit } from '../../lib/audit';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-
-const canManage = (profile) => ['owner', 'manager'].includes(profile?.role);
 
 export default function ComplaintDetail() {
   const { id } = useParams();
@@ -27,7 +26,11 @@ export default function ComplaintDetail() {
   const [newMsg, setNewMsg] = useState('');
   const [sending, setSending] = useState(false);
   const [closing, setClosing] = useState(false);
-  const isManager = canManage(profile);
+  
+  const { can } = usePermissions();
+  const canManageComplaints = can('manage_complaints');
+  const canDeleteComplaints = can('delete_complaints');
+  const isManager = canManageComplaints; // Keep variable for simplicity, but strictly tied to perm
 
   useEffect(() => {
     fetchData();
@@ -129,7 +132,7 @@ export default function ComplaintDetail() {
           {guestConfirmed && (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">✅ Guest Confirmed</span>
           )}
-          {isManager && complaint.status !== 'closed' && (
+          {canDeleteComplaints && complaint.status !== 'closed' && (
             <button
               onClick={handleDelete}
               className="p-1.5 rounded-lg hover:bg-red-50 text-haven-muted hover:text-red-500 transition-colors"

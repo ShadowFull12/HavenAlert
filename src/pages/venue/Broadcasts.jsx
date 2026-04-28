@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Megaphone, Send, Trash2 } from 'lucide-react';
 import useVenueStore from '../../store/venueStore';
 import useAuthStore from '../../store/authStore';
+import { usePermissions } from '../../hooks/usePermissions';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -13,6 +14,8 @@ import toast from 'react-hot-toast';
 export default function Broadcasts() {
   const { venue } = useVenueStore();
   const { user } = useAuthStore();
+  const { can } = usePermissions();
+  const canManageVenue = can('manage_venue');
   const [broadcasts, setBroadcasts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: '', message: '', target_audience: 'all' });
@@ -94,9 +97,9 @@ export default function Broadcasts() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-haven-dark">Broadcasts</h1>
 
-      {/* Send form */}
-      <form onSubmit={handleSend} className="card p-5 space-y-4">
-        <h3 className="font-semibold text-sm text-haven-dark">Send Announcement</h3>
+      {canManageVenue && (
+        <form onSubmit={handleSend} className="card p-5 space-y-4">
+          <h3 className="font-semibold text-sm text-haven-dark">Send Announcement</h3>
         <Input
           label="Title"
           placeholder="e.g. Pool Closure Notice"
@@ -128,6 +131,7 @@ export default function Broadcasts() {
           <Send className="w-4 h-4" /> Send Broadcast
         </Button>
       </form>
+      )}
 
       {/* History */}
       <div>
@@ -160,14 +164,16 @@ export default function Broadcasts() {
                       {b.sender?.full_name || 'Staff'} · {b.created_at ? format(new Date(b.created_at), 'MMM d, HH:mm') : ''}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleDelete(b.id)}
-                    disabled={deletingId === b.id}
-                    className="p-2 rounded-lg text-haven-muted hover:text-danger hover:bg-danger-light transition-colors flex-shrink-0"
-                    title="Delete broadcast"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {canManageVenue && (
+                    <button
+                      onClick={() => handleDelete(b.id)}
+                      disabled={deletingId === b.id}
+                      className="p-2 rounded-lg text-haven-muted hover:text-danger hover:bg-danger-light transition-colors flex-shrink-0"
+                      title="Delete broadcast"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

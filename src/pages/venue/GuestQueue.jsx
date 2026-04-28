@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import useVenueStore from '../../store/venueStore';
 import useAuthStore from '../../store/authStore';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useRealtimeQueue } from '../../hooks/useRealtimeQueue';
 import { supabase } from '../../lib/supabase';
 import { logAudit } from '../../lib/audit';
@@ -15,6 +16,8 @@ import toast from 'react-hot-toast';
 export default function GuestQueue() {
   const { venue } = useVenueStore();
   const { user, profile } = useAuthStore();
+  const { can } = usePermissions();
+  const canManageGuests = can('manage_guests');
   const { queue, loading } = useRealtimeQueue(venue?.id);
   const [rooms, setRooms] = useState([]);
   const [assignModal, setAssignModal] = useState(null);
@@ -69,7 +72,7 @@ export default function GuestQueue() {
       ) : (
         <div className="space-y-2">
           {queue.map(item => (
-            <QueueCard key={item.id} queueItem={item} onAssign={setAssignModal} />
+            <QueueCard key={item.id} queueItem={item} onAssign={canManageGuests ? setAssignModal : undefined} />
           ))}
         </div>
       )}

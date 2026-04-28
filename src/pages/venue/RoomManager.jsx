@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, DoorOpen, Layers } from 'lucide-react';
 import useVenueStore from '../../store/venueStore';
 import useAuthStore from '../../store/authStore';
+import { usePermissions } from '../../hooks/usePermissions';
 import { supabase } from '../../lib/supabase';
 import { logAudit } from '../../lib/audit';
 import RoomCard from '../../components/venue/RoomCard';
@@ -15,6 +16,9 @@ import toast from 'react-hot-toast';
 export default function RoomManager() {
   const { venue } = useVenueStore();
   const { user, profile } = useAuthStore();
+  const { can } = usePermissions();
+  const canManageRooms = can('manage_rooms');
+  const canManageGuests = can('manage_guests');
   const [floors, setFloors] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,10 +93,12 @@ export default function RoomManager() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-haven-dark">Rooms</h1>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setShowAddFloor(true)} className="text-sm"><Layers className="w-4 h-4" /> Add Floor</Button>
-          <Button onClick={() => setShowAddRoom(true)} disabled={!activeFloor} className="text-sm"><Plus className="w-4 h-4" /> Add Room</Button>
-        </div>
+        {canManageRooms && (
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setShowAddFloor(true)} className="text-sm"><Layers className="w-4 h-4" /> Add Floor</Button>
+            <Button onClick={() => setShowAddRoom(true)} disabled={!activeFloor} className="text-sm"><Plus className="w-4 h-4" /> Add Room</Button>
+          </div>
+        )}
       </div>
 
       {/* Floor tabs */}
@@ -153,7 +159,7 @@ export default function RoomManager() {
             <p className="text-sm"><strong>Type:</strong> {showRoomDetail.room_type}</p>
             <p className="text-sm"><strong>Status:</strong> {showRoomDetail.status}</p>
             <p className="text-sm"><strong>Capacity:</strong> {showRoomDetail.capacity}</p>
-            {showRoomDetail.current_guest_id && (
+            {showRoomDetail.current_guest_id && canManageGuests && (
               <Button variant="danger" onClick={() => checkoutGuest(showRoomDetail)} className="w-full">Check Out Guest</Button>
             )}
           </div>

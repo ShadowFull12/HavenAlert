@@ -4,7 +4,9 @@ import { ArrowLeft, Bot, RefreshCw, Download, Lock, Trash2, X } from 'lucide-rea
 import { supabase } from '../../lib/supabase';
 import useVenueStore from '../../store/venueStore';
 import useAuthStore from '../../store/authStore';
+import { usePermissions } from '../../hooks/usePermissions';
 import { generateBriefing, generateIncidentReport } from '../../lib/gemini';
+
 import { logAudit } from '../../lib/audit';
 import IncidentChat from '../../components/incidents/IncidentChat';
 import AuditTrail from '../../components/incidents/AuditTrail';
@@ -13,20 +15,20 @@ import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import toast from 'react-hot-toast';
 
-const canManage = (profile) => ['owner', 'manager'].includes(profile?.role);
-
 export default function IncidentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { venue } = useVenueStore();
   const { user, profile } = useAuthStore();
+  const { can } = usePermissions();
+  const canManageIncidents = can('manage_incidents');
+  const canDeleteIncidents = can('delete_incidents');
   const [incident, setIncident] = useState(null);
   const [events, setEvents] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
-  const isManager = canManage(profile);
 
   useEffect(() => {
     fetchData();
@@ -170,7 +172,7 @@ export default function IncidentDetail() {
           {incident.confirmed_resolved_by_guest && (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">✅ Guest Confirmed</span>
           )}
-          {isManager && incident.status !== 'closed' && (
+          {canDeleteIncidents && incident.status !== 'closed' && (
             <button
               onClick={handleDelete}
               className="p-1.5 rounded-lg hover:bg-red-50 text-haven-muted hover:text-red-500 transition-colors"
@@ -183,7 +185,7 @@ export default function IncidentDetail() {
       </div>
 
       {/* Close banner — shown when resolved (with or without guest confirmation) */}
-      {isManager && incident.status === 'resolved' && (
+      {canManageIncidents && incident.status === 'resolved' && (
         <div className={`card p-4 flex items-center justify-between ${incident.confirmed_resolved_by_guest ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
           <div>
             {incident.confirmed_resolved_by_guest ? (
@@ -208,7 +210,7 @@ export default function IncidentDetail() {
         {/* Left panel */}
         <div className="space-y-4">
           {/* Manager controls only */}
-          {isManager ? (
+          {canManageIncidents ? (
             <div className="card p-4 space-y-3">
               <p className="text-xs font-semibold text-haven-muted uppercase tracking-wider">Manager Controls</p>
               <div>
@@ -259,13 +261,13 @@ export default function IncidentDetail() {
           <div className="card p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><Bot className="w-4 h-4 text-purple-600" /><span className="font-semibold text-sm text-haven-dark">AI Briefing</span></div>
-              {isManager && <Button variant="ghost" onClick={regenerateBriefing} loading={aiLoading} className="text-xs"><RefreshCw className="w-3.5 h-3.5" /> Regenerate</Button>}
+              {canManageIncidents && <Button variant="ghost" onClick={regenerateBriefing} loading={aiLoading} className="text-xs"><RefreshCw className="w-3.5 h-3.5" /> Regenerate</Button>}
             </div>
             <p className="text-sm text-haven-muted leading-relaxed">{incident.ai_briefing || 'No AI briefing generated yet.'}</p>
           </div>
 
           {/* Report — manager only */}
-          {isManager && (
+          {canManageIncidents && (
             <div className="card p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-sm text-haven-dark">Incident Report</span>

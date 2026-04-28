@@ -6,6 +6,7 @@ import {
 import useVenueStore from '../../store/venueStore';
 import useAuthStore from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
+import { usePermissions } from '../../hooks/usePermissions';
 import StaffInviteModal from '../../components/venue/StaffInviteModal';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -40,6 +41,8 @@ const TABS = ['members', 'roles', 'invites'];
 export default function StaffManager() {
   const { venue } = useVenueStore();
   const { profile: myProfile } = useAuthStore();
+  const { can } = usePermissions();
+  const canManageStaff = can('manage_staff');
   const [tab, setTab] = useState('members');
   const [staffList, setStaffList] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -237,8 +240,8 @@ export default function StaffManager() {
           <p className="text-sm text-haven-muted mt-0.5">Manage staff roles and permissions</p>
         </div>
         <div className="flex gap-2">
-          {tab === 'members' && <Button onClick={() => setShowInvite(true)} className="text-sm"><UserPlus className="w-4 h-4" /> Invite Staff</Button>}
-          {tab === 'roles' && <Button onClick={openCreateGroup} className="text-sm"><Shield className="w-4 h-4" /> New Role</Button>}
+          {tab === 'members' && canManageStaff && <Button onClick={() => setShowInvite(true)} className="text-sm"><UserPlus className="w-4 h-4" /> Invite Staff</Button>}
+          {tab === 'roles' && canManageStaff && <Button onClick={openCreateGroup} className="text-sm"><Shield className="w-4 h-4" /> New Role</Button>}
         </div>
       </div>
 
@@ -283,19 +286,23 @@ export default function StaffManager() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={sm.is_active ? 'success' : 'low'}>{sm.is_active ? 'Active' : 'Inactive'}</Badge>
-                      <button onClick={() => toggleStaffActive(sm.id, sm.is_active)}
-                        className="text-xs text-haven-muted hover:text-haven-dark px-2 py-1 rounded hover:bg-gray-100">
-                        {sm.is_active ? 'Deactivate' : 'Activate'}
-                      </button>
-                      {sm.role !== 'owner' && sm.profile?.id !== myProfile?.id && (
+                      {canManageStaff && (
+                        <button onClick={() => toggleStaffActive(sm.id, sm.is_active)}
+                          className="text-xs text-haven-muted hover:text-haven-dark px-2 py-1 rounded hover:bg-gray-100">
+                          {sm.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                      )}
+                      {canManageStaff && sm.role !== 'owner' && sm.profile?.id !== myProfile?.id && (
                         <button onClick={() => removeStaff(sm.id)} className="p-1.5 rounded hover:bg-red-50 text-haven-muted hover:text-red-500">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
-                      <button onClick={() => setExpandedStaff(isExpanded ? null : sm.id)}
-                        className="p-1.5 rounded hover:bg-gray-100 text-haven-muted">
-                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <Settings2 className="w-4 h-4" />}
-                      </button>
+                      {canManageStaff && (
+                        <button onClick={() => setExpandedStaff(isExpanded ? null : sm.id)}
+                          className="p-1.5 rounded hover:bg-gray-100 text-haven-muted">
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <Settings2 className="w-4 h-4" />}
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -380,14 +387,16 @@ export default function StaffManager() {
                     <h4 className="font-semibold text-sm text-haven-dark">{g.name}</h4>
                     <span className="text-xs text-haven-muted">— {(g.permissions || []).length} permissions</span>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => openEditGroup(g)} className="p-1.5 rounded hover:bg-gray-100 text-haven-muted hover:text-haven-dark">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => deleteGroup(g.id)} className="p-1.5 rounded hover:bg-red-50 text-haven-muted hover:text-red-500">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {canManageStaff && (
+                    <div className="flex gap-1">
+                      <button onClick={() => openEditGroup(g)} className="p-1.5 rounded hover:bg-gray-100 text-haven-muted hover:text-haven-dark">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => deleteGroup(g.id)} className="p-1.5 rounded hover:bg-red-50 text-haven-muted hover:text-red-500">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {g.description && <p className="text-xs text-haven-muted mb-2">{g.description}</p>}
                 <div className="flex flex-wrap gap-1.5">
@@ -425,7 +434,7 @@ export default function StaffManager() {
           </div>
 
           {invites.length === 0 ? (
-            <EmptyState icon={Key} title="No invite codes" message="Generate invite codes to onboard new staff members." action="Generate Invite" onAction={() => setShowInvite(true)} />
+            <EmptyState icon={Key} title="No invite codes" message="Generate invite codes to onboard new staff members." action={canManageStaff ? "Generate Invite" : undefined} onAction={canManageStaff ? () => setShowInvite(true) : undefined} />
           ) : (
             <div className="space-y-2">
               {invites.map(inv => (
