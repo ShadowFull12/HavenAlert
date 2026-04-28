@@ -435,3 +435,25 @@ begin
   values (p_venue_id, p_actor_id, p_actor_role, p_action, p_resource_type, p_resource_id, p_before, p_after);
 end;
 $$ language plpgsql security definer;
+
+-- TRIGGER: auto-create predefined role groups when a venue is created
+create or replace function create_predefined_role_groups()
+returns trigger as $$
+begin
+  insert into staff_groups (venue_id, name, description, color, permissions) values
+    (NEW.id, 'Manager', 'Full management access across all venue operations', '#8b5cf6',
+     ARRAY['view_incidents','manage_incidents','delete_incidents','view_complaints','manage_complaints','delete_complaints','view_guests','manage_guests','view_rooms','manage_rooms','view_staff','manage_staff','view_analytics','manage_venue']::staff_permission[]),
+    (NEW.id, 'Front Desk', 'Guest check-in/check-out, queue management, and complaint handling', '#3b82f6',
+     ARRAY['view_incidents','view_complaints','manage_complaints','view_guests','manage_guests','view_rooms']::staff_permission[]),
+    (NEW.id, 'Security', 'Incident response, monitoring, and guest safety', '#ef4444',
+     ARRAY['view_incidents','manage_incidents','view_complaints','view_guests','view_rooms']::staff_permission[]),
+    (NEW.id, 'Housekeeping', 'Room management, maintenance, and cleanliness', '#22c55e',
+     ARRAY['view_rooms','manage_rooms','view_complaints']::staff_permission[]);
+  return NEW;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists venue_create_predefined_roles on venues;
+create trigger venue_create_predefined_roles
+  after insert on venues
+  for each row execute function create_predefined_role_groups();

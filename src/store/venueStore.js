@@ -182,59 +182,7 @@ const useVenueStore = create((set, get) => ({
 
       if (smError) console.error('Staff member insert error (will retry via RPC):', smError);
 
-      // Create predefined role groups for the new venue
-      const predefinedGroups = [
-        {
-          venue_id: venue.id,
-          name: 'Manager',
-          description: 'Full management access across all venue operations',
-          color: '#8b5cf6',
-          permissions: [
-            'view_incidents', 'manage_incidents', 'delete_incidents',
-            'view_complaints', 'manage_complaints', 'delete_complaints',
-            'view_guests', 'manage_guests',
-            'view_rooms', 'manage_rooms',
-            'view_staff', 'manage_staff',
-            'view_analytics', 'manage_venue',
-          ],
-        },
-        {
-          venue_id: venue.id,
-          name: 'Front Desk',
-          description: 'Guest check-in/check-out, queue management, and complaint handling',
-          color: '#3b82f6',
-          permissions: [
-            'view_incidents', 'view_complaints', 'manage_complaints',
-            'view_guests', 'manage_guests',
-            'view_rooms',
-          ],
-        },
-        {
-          venue_id: venue.id,
-          name: 'Security',
-          description: 'Incident response, monitoring, and guest safety',
-          color: '#ef4444',
-          permissions: [
-            'view_incidents', 'manage_incidents',
-            'view_complaints',
-            'view_guests',
-            'view_rooms',
-          ],
-        },
-        {
-          venue_id: venue.id,
-          name: 'Housekeeping',
-          description: 'Room management, maintenance, and cleanliness',
-          color: '#22c55e',
-          permissions: [
-            'view_rooms', 'manage_rooms',
-            'view_complaints',
-          ],
-        },
-      ];
-
-      const { error: groupsError } = await supabase.from('staff_groups').insert(predefinedGroups);
-      if (groupsError) console.error('Predefined groups insert error:', groupsError);
+      // Predefined role groups are auto-created by the database trigger (venue_create_predefined_roles)
 
       // Update profile
       await supabase
