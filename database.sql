@@ -270,9 +270,16 @@ create policy "venues_guest_read" on venues for select using (
 create policy "staff_members_owner" on staff_members for all using (
   exists (select 1 from venues v where v.id = staff_members.venue_id and v.owner_id = auth.uid())
 );
+create policy "staff_members_manager_manage" on staff_members for all using (
+  exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_members.venue_id and sm.role IN ('manager', 'owner'))
+);
+create policy "staff_members_self_insert" on staff_members for insert with check (
+  profile_id = auth.uid()
+);
 create policy "staff_members_read" on staff_members for select using (
   exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_members.venue_id)
 );
+
 
 -- Incidents: venue staff access
 create policy "incidents_venue_access" on incidents for all using (
@@ -334,15 +341,23 @@ create policy "broadcasts_write" on broadcasts for insert with check (
 create policy "invites_owner" on staff_invites for all using (
   exists (select 1 from venues v where v.id = staff_invites.venue_id and v.owner_id = auth.uid())
 );
+create policy "invites_manager" on staff_invites for all using (
+  exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_invites.venue_id and sm.role IN ('manager', 'owner'))
+);
 create policy "invites_read_code" on staff_invites for select using (true);
+create policy "invites_redeem" on staff_invites for update using (used_by IS NULL) with check (used_by = auth.uid());
 
 -- Staff groups
 create policy "groups_owner" on staff_groups for all using (
   exists (select 1 from venues v where v.id = staff_groups.venue_id and v.owner_id = auth.uid())
 );
+create policy "groups_manager" on staff_groups for all using (
+  exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_groups.venue_id and sm.role IN ('manager', 'owner'))
+);
 create policy "groups_staff_read" on staff_groups for select using (
   exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_groups.venue_id)
 );
+
 
 -- Floors
 create policy "floors_access" on floors for all using (
