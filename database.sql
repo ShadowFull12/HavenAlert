@@ -266,19 +266,39 @@ create policy "venues_guest_read" on venues for select using (
   exists (select 1 from profiles p where p.id = auth.uid() and p.venue_id = venues.id)
 );
 
+-- Helper functions to avoid infinite recursion
+CREATE OR REPLACE FUNCTION is_venue_staff(p_venue_id uuid) RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM staff_members 
+    WHERE venue_id = p_venue_id AND profile_id = auth.uid()
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION is_venue_manager(p_venue_id uuid) RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM staff_members 
+    WHERE venue_id = p_venue_id AND profile_id = auth.uid() AND role IN ('manager', 'owner')
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Staff members: venue owner full, staff read own venue
 create policy "staff_members_owner" on staff_members for all using (
   exists (select 1 from venues v where v.id = staff_members.venue_id and v.owner_id = auth.uid())
 );
 create policy "staff_members_manager_manage" on staff_members for all using (
-  exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_members.venue_id and sm.role IN ('manager', 'owner'))
+  is_venue_manager(venue_id)
 );
 create policy "staff_members_self_insert" on staff_members for insert with check (
   profile_id = auth.uid()
 );
 create policy "staff_members_read" on staff_members for select using (
-  exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_members.venue_id)
+  is_venue_staff(venue_id)
 );
+
 
 
 -- Incidents: venue staff access
@@ -342,7 +362,7 @@ create policy "invites_owner" on staff_invites for all using (
   exists (select 1 from venues v where v.id = staff_invites.venue_id and v.owner_id = auth.uid())
 );
 create policy "invites_manager" on staff_invites for all using (
-  exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_invites.venue_id and sm.role IN ('manager', 'owner'))
+  is_venue_manager(venue_id)
 );
 create policy "invites_read_code" on staff_invites for select using (true);
 create policy "invites_redeem" on staff_invites for update using (used_by IS NULL) with check (used_by = auth.uid());
@@ -352,11 +372,12 @@ create policy "groups_owner" on staff_groups for all using (
   exists (select 1 from venues v where v.id = staff_groups.venue_id and v.owner_id = auth.uid())
 );
 create policy "groups_manager" on staff_groups for all using (
-  exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_groups.venue_id and sm.role IN ('manager', 'owner'))
+  is_venue_manager(venue_id)
 );
 create policy "groups_staff_read" on staff_groups for select using (
-  exists (select 1 from staff_members sm where sm.profile_id = auth.uid() and sm.venue_id = staff_groups.venue_id)
+  is_venue_staff(venue_id)
 );
+
 
 
 -- Floors

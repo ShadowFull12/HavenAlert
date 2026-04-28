@@ -11,6 +11,8 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { useNotifications } from '../../hooks/useNotifications';
 import NotificationBell from '../ui/NotificationBell';
 import Spinner from '../ui/Spinner';
+import { supabase } from '../../lib/supabase';
+import toast from 'react-hot-toast';
 
 export default function VenueLayout() {
   const { signOut, profile } = useAuthStore();
@@ -38,6 +40,26 @@ export default function VenueLayout() {
   }, [profile?.id]);
 
   const isStaff = profile?.role === 'staff';
+
+  const handleLeaveVenue = async () => {
+    if (!confirm('Are you sure you want to leave this venue? You will lose all access and must be re-invited to join again.')) return;
+    
+    try {
+      setInitializing(true);
+      const { error } = await supabase.from('staff_members').delete().eq('profile_id', profile.id).eq('venue_id', venue.id);
+      if (error) throw error;
+      
+      toast.success('You have left the venue.');
+      
+      // Update local profile state and redirect
+      await useAuthStore.getState().refreshProfile();
+      navigate('/auth/staff-login', { replace: true });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to leave venue');
+      setInitializing(false);
+    }
+  };
 
   const navItems = [
     { to: '/venue',            icon: LayoutDashboard, label: 'Dashboard',  show: true },
@@ -129,10 +151,19 @@ export default function VenueLayout() {
           </div>
           <button
             onClick={handleSignOut}
-            className="sidebar-link w-full text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            className="sidebar-link w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 mb-2"
           >
             <LogOut className="w-5 h-5" /> Sign Out
           </button>
+          
+          {profile?.role !== 'owner' && (
+            <button
+              onClick={handleLeaveVenue}
+              className="sidebar-link w-full text-slate-400 hover:text-white hover:bg-haven-border/50 text-xs py-2"
+            >
+              <UserCog className="w-4 h-4" /> Leave Venue
+            </button>
+          )}
         </div>
       </aside>
 
@@ -205,9 +236,17 @@ export default function VenueLayout() {
               ))}
             </nav>
             <div className="px-4 py-4 border-t border-haven-border">
-              <button onClick={handleSignOut} className="sidebar-link w-full text-red-400 hover:text-red-300 hover:bg-red-500/10">
+              <button onClick={() => { setSidebarOpen(false); handleSignOut(); }} className="sidebar-link w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 mb-2">
                 <LogOut className="w-5 h-5" /> Sign Out
               </button>
+              {profile?.role !== 'owner' && (
+                <button
+                  onClick={() => { setSidebarOpen(false); handleLeaveVenue(); }}
+                  className="sidebar-link w-full text-slate-400 hover:text-white hover:bg-haven-border/50 text-xs py-2"
+                >
+                  <UserCog className="w-4 h-4" /> Leave Venue
+                </button>
+              )}
             </div>
           </div>
         </div>
