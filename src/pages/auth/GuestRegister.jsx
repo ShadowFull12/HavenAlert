@@ -29,14 +29,15 @@ export default function GuestRegister() {
     if (!validate()) return;
 
     setLoading(true);
-    const { error } = await signUp(form.email, form.password, form.fullName, 'guest');
-    setLoading(false);
-
-    if (error) {
-      toast.error(error.message || 'Registration failed');
-    } else {
+    try {
+      const { error: authError } = await signUp(form.email.trim(), form.password, form.fullName.trim(), 'guest');
+      if (authError) throw authError;
       toast.success('Account created!');
       navigate('/guest');
+    } catch (error) {
+      toast.error(error.message || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 

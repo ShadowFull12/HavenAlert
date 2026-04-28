@@ -31,7 +31,7 @@ export default function GuestLogin() {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    const { error } = await signIn(form.email, form.password);
+    const { error } = await signIn(form.email.trim(), form.password);
     setLoading(false);
     if (error) {
       toast.error(error.message || 'Login failed');

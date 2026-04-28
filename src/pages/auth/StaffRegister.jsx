@@ -47,12 +47,11 @@ export default function StaffRegister() {
     if (!validateAccount()) return;
     setLoading(true);
     try {
-      // Sign up with role = 'staff' initially (will update after invite redemption)
-      const { error } = await signUp(form.email, form.password, form.fullName, 'staff');
-      if (error) throw error;
+      const { data, error: authError } = await signUp(form.email.trim(), form.password, form.fullName.trim(), 'staff');
+      if (authError) throw authError;
 
       // Sign in immediately so we have the user object
-      const { data: signInData, error: signInError } = await signIn(form.email, form.password);
+      const { data: signInData, error: signInError } = await signIn(form.email.trim(), form.password);
       if (signInError) throw signInError;
 
       setRegisteredUser(useAuthStore.getState().user);

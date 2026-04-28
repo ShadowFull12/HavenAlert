@@ -36,8 +36,9 @@ export default function VenueLogin() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const { data, error } = await signIn(form.email, form.password);
+      const { data, error } = await signIn(form.email.trim(), form.password);
       if (error) throw error;
+
 
       const profile = useAuthStore.getState().profile;
       const v = await loadVenueForUser(profile);

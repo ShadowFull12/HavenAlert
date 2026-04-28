@@ -34,8 +34,9 @@ export default function StaffLogin() {
 
     setLoading(true);
     try {
-      const { data, error } = await signIn(form.email, form.password);
+      const { data, error } = await signIn(form.email.trim(), form.password);
       if (error) throw error;
+
 
       // signIn() already fetches and sets profile in the store — read it fresh
       const freshProfile = useAuthStore.getState().profile;

@@ -49,8 +49,9 @@ export default function VenueRegister() {
 
     setLoading(true);
     try {
-      const { data, error: authError } = await signUp(form.email, form.password, form.fullName, 'owner');
+      const { data, error: authError } = await signUp(form.email.trim(), form.password, form.fullName.trim(), 'owner');
       if (authError) throw authError;
+
 
       // Check if email confirmation is needed (user.session will be null if so)
       if (!data?.session) {
