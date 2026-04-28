@@ -60,7 +60,7 @@ export default function IncidentDetail() {
 
   // Manager only — update any field
   const updateField = async (field, value) => {
-    if (!isManager) { toast.error('Only managers can change this'); return; }
+    if (!canManageIncidents) { toast.error('You don\'t have permission to change this'); return; }
     const before = { [field]: incident[field] };
     const { error } = await supabase.from('incidents').update({ [field]: value, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) { toast.error('Update failed'); return; }
@@ -75,7 +75,7 @@ export default function IncidentDetail() {
 
   // Manager only — assign staff (auto-triggers status → 'assigned' via DB trigger)
   const handleAssign = async (staffProfileId) => {
-    if (!isManager) return;
+    if (!canManageIncidents) return;
     const val = staffProfileId || null;
     const { error } = await supabase.from('incidents')
       .update({ assigned_to: val, updated_at: new Date().toISOString() })
@@ -91,7 +91,7 @@ export default function IncidentDetail() {
 
   // Manager only — close incident (requires resolved state, or force-close with confirm)
   const handleClose = async () => {
-    if (!isManager) return;
+    if (!canManageIncidents) return;
     // If awaiting guest confirm, prompt
     if (!incident.confirmed_resolved_by_guest) {
       if (!window.confirm('Guest has not confirmed resolution yet. Force-close this incident anyway?')) return;
@@ -112,7 +112,7 @@ export default function IncidentDetail() {
 
   // Manager only — delete incident
   const handleDelete = async () => {
-    if (!isManager) return;
+    if (!canDeleteIncidents) return;
     if (!window.confirm('Permanently delete this incident? This cannot be undone.')) return;
     const { error } = await supabase.from('incidents').delete().eq('id', id);
     if (error) { toast.error('Delete failed'); return; }
